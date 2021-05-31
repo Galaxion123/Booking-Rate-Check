@@ -16,7 +16,7 @@ namespace Booking_Rate_Check
     {
         public string filexl;
         public string filetxt;
-        public char[] separators = new char[] { '\t', ':', ';', '|', '$', '.' };
+        public char[] separators = new char[] { '\t', ':', ';', '|', '$', '.', '\n'};
 
         public Form1()
         {
@@ -37,11 +37,13 @@ namespace Booking_Rate_Check
 
         private void Parse_txt(string file_name)
         {
+            int count = 0;
+
             string orates = File.ReadAllText(filetxt);
-            string[] opera_bookings = orates.Split(separators);
-            foreach (string booking in opera_bookings)
+            string[] temp = orates.Split(separators);
+            foreach (string booking in temp)
             {
-                Console.WriteLine($"Substring: {booking}");
+                System.Diagnostics.Debug.WriteLine($"Substring: {booking}");
             }
         }
 
@@ -75,7 +77,7 @@ namespace Booking_Rate_Check
         private void CheckRatesButton_Click(object sender, EventArgs e)
         {
             Excel.Application Booking_Rates = new Excel.Application();
-            Booking_Rates.Visible = true;
+            Booking_Rates.Visible = false;
 
             Excel.Workbook Booking_rates_workbook = Booking_Rates.Workbooks.Open(filexl);
             Excel.Sheets Booking_rates_sheet = Booking_rates_workbook.Worksheets;
