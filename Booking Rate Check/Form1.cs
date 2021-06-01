@@ -18,6 +18,12 @@ namespace Booking_Rate_Check
         public string filetxt;
         public char[] separators = new char[] { '\t', ':', ';', '|', '$', '.', '\n'};
 
+        class Resv
+        {
+            public string reference_no;
+            public string price;
+        }
+
         public Form1()
         {
             InitializeComponent();
@@ -35,16 +41,21 @@ namespace Booking_Rate_Check
             }
         }
 
-        private void Parse_txt(string file_name)
+        private Queue<Resv> Parse_txt(string file_name)
         {
-            int count = 0;
-
+            int i = 0;
             string orates = File.ReadAllText(filetxt);
             string[] temp = orates.Split(separators);
-            foreach (string booking in temp)
+            int count = (temp.Length - 1)/11;
+            System.Diagnostics.Debug.WriteLine(count);
+            Queue<Resv> resvs = new Queue<Resv>();
+            while (count > 0)
             {
-                System.Diagnostics.Debug.WriteLine($"Substring: {booking}");
+                resvs.Enqueue(new Resv() { reference_no = temp[i], price = temp[i + 9] });
+                i += 11;
+                count--;
             }
+            return resvs;
         }
 
         private void ExcelBrowse_Click(object sender, EventArgs e)
@@ -83,7 +94,8 @@ namespace Booking_Rate_Check
             Excel.Sheets Booking_rates_sheet = Booking_rates_workbook.Worksheets;
             Excel.Worksheet brates = (Excel.Worksheet)Booking_rates_sheet.get_Item("Sheet1");
 
-            Parse_txt(filetxt);
+            Queue<Resv> orates = Parse_txt(filetxt);
+
             Booking_rates_workbook.Close(false);
         }
     }
