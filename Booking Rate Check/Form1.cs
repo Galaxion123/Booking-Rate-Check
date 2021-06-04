@@ -48,8 +48,7 @@ namespace Booking_Rate_Check
             int i = 0;
             string orates = File.ReadAllText(filetxt);
             string[] temp = orates.Split(separators);
-            int count = (temp.Length - 1)/11;
-            System.Diagnostics.Debug.WriteLine(count);
+            int count = (temp.Length - 1) / 11;
             Queue<Resv> resvs = new Queue<Resv>();
             while (count > 0)
             {
@@ -58,6 +57,20 @@ namespace Booking_Rate_Check
                 count--;
             }
             return resvs;
+        }
+
+        private int index_search(string to_search)
+        {
+            int output;
+            if ((output = to_search.IndexOf(".")) < 0)
+                output = to_search.IndexOf(" ");
+            return output;
+        }
+
+        private string Strim(string price)
+        { 
+            string output = price.Substring(0, index_search(price));
+            return output;
         }
 
         private void ExcelBrowse_Click(object sender, EventArgs e)
@@ -89,9 +102,12 @@ namespace Booking_Rate_Check
 
         private void CheckRatesButton_Click(object sender, EventArgs e)
         {
+            Cursor.Current = Cursors.WaitCursor;
             int count = 1;
+            int check = 0;
             Excel.Application Booking_Rates = new Excel.Application();
             Booking_Rates.Visible = false;
+            string output = "Booking conf_no | Opera conf_no | Booking Price | Opera Price | Opera Guest Name | Разница между ценой в Опере и ценой в Букинге |\n\n";
 
             Excel.Workbook Booking_rates_workbook = Booking_Rates.Workbooks.Open(filexl);
             Excel.Sheets Booking_rates_sheet = Booking_rates_workbook.Worksheets;
@@ -109,22 +125,51 @@ namespace Booking_Rate_Check
             while (orates.Count > 0)
             {
                 int i = 2;
+                int diff, bp, op;
                 Resv resv = orates.Peek();
-                string ref_no = (string)(brates.Cells[i, "A"] as Excel.Range).Value.ToString();
+                string ref_no = (brates.Cells[i, "A"] as Excel.Range).Value.ToString();
+                string price;
                 while (i < count)
                 {
                     if (String.Equals(ref_no, resv.reference_no))
                     {
-                        System.Diagnostics.Debug.WriteLine($"{ref_no} and {resv.reference_no}");
+                        check++;
+                        price = Strim((brates.Cells[i, "M"] as Excel.Range).Value.ToString());
+                        if (!String.Equals(price, resv.price))
+                        {
+                            bp = Int32.Parse(price);
+                            op = Int32.Parse(resv.price);
+                            diff = op - bp;
+                            output = String.Concat(output, resv.reference_no, " | ", resv.conf_no, " | ", price, " | ", resv.price, " | ", resv.name, " | ", diff.ToString(), " |\n\n");
+                        }
                         break;
                     }
                     i++;
-                    ref_no = (string)(brates.Cells[i, "A"] as Excel.Range).Value.ToString();
+                    ref_no = (brates.Cells[i, "A"] as Excel.Range).Value.ToString();
                 }
                 orates.Dequeue();
             }
+            if (check < 3)
+                output = String.Concat(output, "Совпадений номеров подтверждений не найдено, проверьте сравниваемые файлы и попробуйте снова !");
 
             Booking_rates_workbook.Close(false);
+            richTextBox1.Text = output;
+            Cursor.Current = Cursors.Default;
+            if (check != 0)
+                Export.Enabled = true;
+            else
+                Export.Enabled = false;
+        }
+
+        private void Export_Click(object sender, EventArgs e)
+        {
+            DialogResult result = saveFileDialog1.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                File.WriteAllText(saveFileDialog1.FileName, richTextBox1.Text);
+                MessageBox.Show("Файл сохранен успешно.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.Close();
+            }
         }
     }
 }
