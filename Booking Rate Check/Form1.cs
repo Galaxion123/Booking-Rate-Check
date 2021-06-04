@@ -21,6 +21,8 @@ namespace Booking_Rate_Check
         class Resv
         {
             public string reference_no;
+            public string conf_no;
+            public string name;
             public string price;
         }
 
@@ -51,7 +53,7 @@ namespace Booking_Rate_Check
             Queue<Resv> resvs = new Queue<Resv>();
             while (count > 0)
             {
-                resvs.Enqueue(new Resv() { reference_no = temp[i], price = temp[i + 9] });
+                resvs.Enqueue(new Resv() { reference_no = temp[i], conf_no = temp[i + 1], name = temp[i + 2], price = temp[i + 9] });
                 i += 11;
                 count--;
             }
@@ -87,6 +89,7 @@ namespace Booking_Rate_Check
 
         private void CheckRatesButton_Click(object sender, EventArgs e)
         {
+            int count = 1;
             Excel.Application Booking_Rates = new Excel.Application();
             Booking_Rates.Visible = false;
 
@@ -94,7 +97,32 @@ namespace Booking_Rate_Check
             Excel.Sheets Booking_rates_sheet = Booking_rates_workbook.Worksheets;
             Excel.Worksheet brates = (Excel.Worksheet)Booking_rates_sheet.get_Item("Sheet1");
 
+            string value = (string)(brates.Cells[count, "B"] as Excel.Range).Value;
+            while (value != null)
+            {
+                count++;
+                value = (string)(brates.Cells[count, "B"] as Excel.Range).Value;
+            }
+            count--;
+
             Queue<Resv> orates = Parse_txt(filetxt);
+            while (orates.Count > 0)
+            {
+                int i = 2;
+                Resv resv = orates.Peek();
+                string ref_no = (string)(brates.Cells[i, "A"] as Excel.Range).Value.ToString();
+                while (i < count)
+                {
+                    if (String.Equals(ref_no, resv.reference_no))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"{ref_no} and {resv.reference_no}");
+                        break;
+                    }
+                    i++;
+                    ref_no = (string)(brates.Cells[i, "A"] as Excel.Range).Value.ToString();
+                }
+                orates.Dequeue();
+            }
 
             Booking_rates_workbook.Close(false);
         }
